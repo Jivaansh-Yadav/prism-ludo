@@ -1147,15 +1147,23 @@ function showStep() {
   refresh();
 }
 
-function frameForTutorial() {
+function frameForTutorial(instant = false) {
   const narrow = app.clientWidth < 700;
-  frameBoard(narrow ? 1.14 : 1.2, narrow ? 0.1 : 0.19);
+  frameBoard(narrow ? 1.14 : 1.2, narrow ? 0.1 : 0.19, 0, instant);
 }
 
-function frameForSheet() {
+function frameForSheet(instant = false) {
   const w = app.clientWidth;
-  if (w >= 900) frameBoard(2.2, 0.04, 0.21);
-  else frameBoard(w < 700 ? 1.46 : 1.62, 0.17);
+  if (w >= 900) frameBoard(2.2, 0.04, 0.21, instant);
+  else frameBoard(w < 700 ? 1.46 : 1.62, 0.17, 0, instant);
+}
+
+/* Whichever frame the current screen wants, applied now or eased into. */
+function reframe(instant = false) {
+  if (!camera) return;
+  if (tutorialStep >= 0) frameForTutorial(instant);
+  else if (setupOpen) frameForSheet(instant);
+  else resetCamera(instant);
 }
 
 function closeTutorial() {
@@ -1184,7 +1192,35 @@ function closeTutorial() {
 /* --------------------------------------------------------------------------
    Camera + input
    -------------------------------------------------------------------------- */
-function frameBoard(pad, rise, dxFrac = 0) {
+/* Camera frames are eased, not snapped. When a sheet takes over half the screen the
+   board slides out of its way instead of teleporting there. */
+const camMove = {
+  on: false,
+  start: 0,
+  dur: 620,
+  fromPos: new THREE.Vector3(),
+  toPos: new THREE.Vector3(),
+  fromTarget: new THREE.Vector3(),
+  toTarget: new THREE.Vector3()
+};
+let camPlaced = false;
+
+const easeInOut = (u) => (u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2);
+
+function stopCamMove() {
+  camMove.on = false;
+}
+
+function moveCameraTo(pos, target) {
+  camMove.fromPos.copy(camera.position);
+  camMove.fromTarget.copy(controls.target);
+  camMove.toPos.copy(pos);
+  camMove.toTarget.copy(target);
+  camMove.start = performance.now();
+  camMove.on = true;
+}
+
+function frameBoard(pad, rise, dxFrac = 0, instant = false) {
   const w = app.clientWidth;
   const h = app.clientHeight;
   const aspect = w / h;
@@ -1196,16 +1232,25 @@ function frameBoard(pad, rise, dxFrac = 0) {
   const visibleH = 2 * d * Math.tan(fovV / 2);
   const targetZ = visibleH * rise;
   const dx = dxFrac * 2 * d * Math.tan(fovH / 2);
-  controls.target.set(dx, 0, targetZ);
-  camera.position.set(dx + d * 0.05, d * 0.8, targetZ + d * 0.599);
-  controls.update();
+  const toTarget = new THREE.Vector3(dx, 0, targetZ);
+  const toPos = new THREE.Vector3(dx + d * 0.05, d * 0.8, targetZ + d * 0.599);
   topView = false;
+
+  if (instant || reduced || !camPlaced) {
+    camMove.on = false;
+    controls.target.copy(toTarget);
+    camera.position.copy(toPos);
+    controls.update();
+    camPlaced = true;
+    return;
+  }
+  moveCameraTo(toPos, toTarget);
 }
 
-function resetCamera() {
+function resetCamera(instant = false) {
   if (!camera) return;
   const narrow = app.clientWidth < 700;
-  frameBoard(narrow ? 1.06 : 1.26, narrow ? 0.09 : 0.105);
+  frameBoard(narrow ? 1.06 : 1.26, narrow ? 0.09 : 0.105, 0, instant);
 }
 
 function turnCamera() {
@@ -1227,6 +1272,7 @@ let pointerStart = null;
 const raycaster = new THREE.Raycaster();
 
 function onPointerDown(e) {
+  stopCamMove();
   pointerStart = [e.clientX, e.clientY];
 }
 
@@ -1265,7 +1311,9 @@ function onResize() {
   const narrow = w < 700;
   const flipped = lastNarrow !== null && narrow !== lastNarrow;
   lastNarrow = narrow;
-  if (!ready || flipped) resetCamera();
+  if (!ready) reframe(true);
+  else if (flipped) reframe();
+  else if (camMove.on) reframe(true);
 }
 
 function onVisibility() {
@@ -1275,6 +1323,15 @@ function onVisibility() {
 
 function tick(now) {
   if (disposed || document.hidden) return;
+
+  if (camMove.on) {
+    const u = Math.min(1, Math.max(0, (now - camMove.start) / camMove.dur));
+    const e = easeInOut(u);
+    camera.position.lerpVectors(camMove.fromPos, camMove.toPos, e);
+    controls.target.lerpVectors(camMove.fromTarget, camMove.toTarget, e);
+    if (u === 1) camMove.on = false;
+  }
+
   controls.update();
 
   if (phase === 'rolling') {
