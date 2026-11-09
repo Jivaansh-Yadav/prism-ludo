@@ -12,7 +12,8 @@
 <img src="https://img.shields.io/badge/Geometry-procedural-2ee0b8?style=flat-square&labelColor=0b0f2b" alt="Procedural geometry" />
 <img src="https://img.shields.io/badge/Seats-2%20%C2%B7%203%20%C2%B7%204-7b8cff?style=flat-square&labelColor=0b0f2b" alt="2, 3 or 4 seats" />
 <img src="https://img.shields.io/badge/Bots-heuristic-ffcb62?style=flat-square&labelColor=0b0f2b" alt="Heuristic bots" />
-<img src="https://img.shields.io/badge/Audio-6%20clips-ff6088?style=flat-square&labelColor=0b0f2b" alt="6 audio clips" />
+<img src="https://img.shields.io/badge/Themes-5%20boards-7b8cff?style=flat-square&labelColor=0b0f2b" alt="5 board themes" />
+<img src="https://img.shields.io/badge/Audio-30%20clips-ff6088?style=flat-square&labelColor=0b0f2b" alt="30 audio clips" />
 <img src="https://img.shields.io/badge/Build-none-lightgrey?style=flat-square&labelColor=0b0f2b" alt="No build step" />
 
 </div>
@@ -21,7 +22,7 @@
 
 <div align="center">
 
-<sub>Three files that ship as they are: <b>2,274 lines</b> of HTML, CSS and one ES module. No models, no textures, no bundler — the board, the pawns and the die are geometry, and the whole thing runs from GitHub Pages exactly as it sits in the repository.</sub>
+<sub>Three files that ship as they are: <b>2,556 lines</b> of HTML, CSS and one ES module. No models, no textures, no bundler — the board, the pawns and the die are geometry, and the whole thing runs from GitHub Pages exactly as it sits in the repository.</sub>
 
 </div>
 
@@ -44,6 +45,24 @@ You open the page, the tutorial tells you how a match works, and then you choose
 </div>
 
 ---
+
+<div align="center">
+
+## Five tables
+
+</div>
+
+The setup sheet carries a theme row, and a theme is not a colour filter — it rebuilds the table, the pawns, the die and the room around them, and swaps the audio to a matching set of clips. The pick is remembered, so the table you left is the table you come back to.
+
+| | Room | Board | Sound |
+|---|---|---|---|
+| **Prism** | deep indigo, cool bloom | frosted glass tiles, cyan trim | glassy marimba and soft chimes |
+| **Ember** | burnt umber, warm haze | dark walnut trays, brass trim | low wooden drums, dry clicks |
+| **Marble** | gallery grey, clean light | ivory stone, platinum bezel | felted piano, bright pings |
+| **Neon** | violet night, heavy bloom | black panels with glowing blue track | synth pulses, arpeggio loop |
+| **Jade** | forest green, soft mist | lacquered cream tiles, green frame | bamboo flute, water drops |
+
+Switching mid-match is safe: the geometry is cleared and rebuilt, the tokens are placed back where the rules say they are, and the turn in progress is untouched.
 
 <div align="center">
 
@@ -78,7 +97,7 @@ Roll, pick a token, move. The rest is the rule set, and the rule set is what mak
 <li><b>Seat sets, not a player array</b> — <code>SEAT_SETS</code> decides which corners are in play; every yard plate that is not seated is tinted 86% toward the dark and its pawns are hidden.</li>
 <li><b>Bots that read the board</b> — capture, finishing, leaving the yard, safe squares, and how close an enemy is behind the destination all move the score.</li>
 <li><b>A tutorial before the table</b> — seven steps, one idea each, and the last button hands straight over to the seat picker instead of dropping you into a match you did not choose.</li>
-<li><b>Sound you can silence</b> — one background loop and five effect clips, gated behind a single mute toggle that persists for the session.</li>
+<li><b>Sound you can silence</b> — every theme ships its own background loop and five effect clips, hot-swapped when you change table and gated behind one mute toggle that persists for the session.</li>
 <li><b>Reduced motion respected</b> — the pulsing halos around legal tokens stop when the system asks for less movement; the camera still fits the board.</li>
 </ul>
 
@@ -94,7 +113,7 @@ Roll, pick a token, move. The rest is the rule set, and the rule set is what mak
 CSS             custom properties, safe-area insets, one mobile breakpoint
 JavaScript      ES modules, no build step
 Three.js        r170 via import map · OrbitControls · RoundedBoxGeometry · RoomEnvironment
-Audio           HTMLAudioElement, six MP3 clips
+Audio           HTMLAudioElement, thirty MP3 clips (six per theme)
 Fonts           Manrope, one weight range</code></pre>
 
 ---
@@ -131,6 +150,21 @@ const halfMin = Math.min(halfV, halfV * camera.aspect);
 const limit = THREE.MathUtils.clamp(BOARD_REACH - halfMin, 1.1, BOARD_REACH);</code></pre>
 
 <p>The allowance is the board's reach minus what the screen can already show, so at the default distance you can barely nudge the table, and by the time you are close enough to read a single token the whole board is reachable. The camera position is translated with the target so the clamp never changes the viewing angle, and the vertical allowance is smaller than the horizontal one so the table cannot be pushed under the floor.</p>
+
+</details>
+
+<details>
+<summary><b>A theme is a data record, not a stylesheet</b></summary>
+
+<br />
+
+<p>Everything that differs between the five tables lives in one <code>THEMES</code> entry — seat colours, room gradient, frame metalness, tile glow, pawn clearcoat, die body, and the four lights. Applying one reads that record and rebuilds only what it has to:</p>
+
+<pre><code>applyTheme(id) → paintBackground · fog · exposure · applyLights
+              → clearBoard · buildTable · buildPieces · buildDieBody
+              → syncPawns · tintYards · audio.setTheme</code></pre>
+
+<p><code>clearBoard()</code> disposes every child of the board group and empties the lookup tables (<code>yardParts</code>, <code>ringTiles</code>, <code>laneTiles</code>, <code>halos</code>, <code>pawns</code>) before the builders run, so no theme leaks geometry into the next one. <code>syncPawns()</code> then re-places the new pawns from the game state, which is why a switch in the middle of a match does not disturb the position of a single token.</p>
 
 </details>
 
@@ -188,10 +222,15 @@ dieGroup.rotation.set(...DICE_EULER[rollValue]);   // when it lands</code></pre>
 
 <pre><code>prism-ludo/
 ├── index.html          # the page: stage, HUD, sheets, import map
-├── app.js              # board · pawns · die · rules · bots · camera · audio (1,530 lines)
-├── styles.css          # layout, sheets, tokens, safe-area insets (600 lines)
+├── app.js              # themes · board · pawns · die · rules · bots · camera · audio (1,764 lines)
+├── styles.css          # layout, sheets, tokens, theme picker, safe-area insets (643 lines)
 ├── favicon.svg         # the prism mark the tab shows
-└── audio/              # bgm · roll · step · capture · home · win</code></pre>
+└── audio/
+    ├── prism/          # bgm · roll · step · capture · home · win
+    ├── ember/          # one folder per theme, same six clip names
+    ├── marble/
+    ├── neon/
+    └── jade/</code></pre>
 
 ---
 
