@@ -1,0 +1,6 @@
+# platform / local noise
+.vercel
+.vercelignore
+node_modules
+.DS_Store
+*.log

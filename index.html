@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Prism Ludo</title>
+<meta name="description" content="A rotatable 3D Ludo board with a crystal die, capture rules and an illustrated tutorial.">
+<meta name="theme-color" content="#101336">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="./styles.css">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+</head>
+<body>
+<main id="app">
+  <div id="stage" aria-label="Rotatable three dimensional Ludo board">
+    <div class="fallback" id="fallback">
+      <strong>LUDO</strong>
+      <span>Preparing your table</span>
+      <noscript>Enable JavaScript to play.</noscript>
+    </div>
+  </div>
+
+  <header>
+    <div class="brand"><b>LUDO</b><span>PRISM</span></div>
+    <div class="tools">
+      <button id="sound" class="icon" aria-label="Mute sound" title="Sound">
+        <svg viewBox="0 0 24 24"><path d="M4 9v6h3.5L13 19V5L7.5 9H4Z"/><path class="wave" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="cross" d="m16 9 5 6m0-6-5 6"/></svg>
+      </button>
+      <button id="restart" aria-label="Start a new match" title="New match">
+        <svg viewBox="0 0 24 24"><path d="M4 9a8 8 0 1 1 0 6M4 4v5h5"/></svg>
+      </button>
+      <button id="help" aria-label="How to play" title="How to play">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M9.5 8.5a2.5 2.5 0 0 1 5 .5c0 2-2.5 2-2.5 4M12 16.5v.2"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <div class="session" id="sessionLabel">PASS &amp; PLAY · FOUR PLAYERS</div>
+
+  <div class="table-hud" id="players">
+    <div class="player active" style="--player:var(--color-red)" data-player="0">
+      <span class="avatar"></span><span class="player-name">Red</span><span class="score">0/4</span><span class="bot-tag">BOT</span>
+    </div>
+    <div class="player" style="--player:var(--color-green)" data-player="1">
+      <span class="avatar"></span><span class="player-name">Green</span><span class="score">0/4</span><span class="bot-tag">BOT</span>
+    </div>
+    <div class="player" style="--player:var(--color-gold)" data-player="2">
+      <span class="avatar"></span><span class="player-name">Gold</span><span class="score">0/4</span><span class="bot-tag">BOT</span>
+    </div>
+    <div class="player" style="--player:var(--color-violet)" data-player="3">
+      <span class="avatar"></span><span class="player-name">Blue</span><span class="score">0/4</span><span class="bot-tag">BOT</span>
+    </div>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="hint" id="hint">Drag to rotate · pinch to zoom</div>
+
+  <div class="tokens" id="tokens" role="group" aria-label="Choose a movable token"></div>
+
+  <div class="view-controls">
+    <button id="rotate" aria-label="Rotate board 90 degrees" title="Rotate board">
+      <svg viewBox="0 0 24 24"><path d="M5 10a8 5 0 1 0 7-3M5 5v5h5"/></svg>
+    </button>
+    <button id="topview" aria-label="Toggle top view" title="Top view">
+      <svg viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5"/></svg>
+    </button>
+    <button id="resetview" aria-label="Reset camera" title="Reset view">
+      <svg viewBox="0 0 24 24"><path d="M8 4H4v4m12-4h4v4M4 16v4h4m12-4v4h-4"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+  </div>
+
+  <div class="tray" id="tray">
+    <div class="die-slot" id="die" aria-hidden="true"><span class="die-initial">✦</span></div>
+    <div class="turn">
+      <div class="eyebrow" id="eyebrow">Your turn</div>
+      <strong id="turnText" aria-live="polite">Red to roll</strong>
+    </div>
+    <button class="roll" id="roll" disabled>Roll dice</button>
+  </div>
+
+  <section class="sheet" id="tutorial" hidden aria-label="How to play">
+    <div class="sheet-top">
+      <span id="stepLabel">How to play · 01/07</span>
+      <button id="closeTutorial" aria-label="Close tutorial">
+        <svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <h2 id="stepTitle"></h2>
+    <p id="stepCopy"></p>
+    <div class="sheet-nav">
+      <button id="prevStep">Back</button>
+      <div class="dots" id="dots"></div>
+      <button class="next" id="nextStep">Next</button>
+    </div>
+  </section>
+
+  <section class="sheet" id="win" hidden aria-live="polite">
+    <div class="winner-mark" id="winnerMark">✦</div>
+    <h2 id="winTitle">Red wins</h2>
+    <p id="winCopy">Four tokens home. One brilliant finish.</p>
+    <div class="win-actions">
+      <button id="playAgain" class="roll">Play again</button>
+    </div>
+  </section>
+
+  <section class="sheet setup" id="setup" hidden aria-label="Match setup">
+    <div class="sheet-top">
+      <span>NEW MATCH</span>
+      <button id="setupClose" hidden aria-label="Cancel">
+        <svg viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <h2>Set the table</h2>
+    <p>Pick the seats. Bots play by the same rules as you do.</p>
+
+    <div class="setup-row">
+      <span class="setup-label">Players</span>
+      <div class="seg" id="segPlayers" role="group" aria-label="Players">
+        <button type="button" data-value="2">2</button>
+        <button type="button" data-value="3">3</button>
+        <button type="button" data-value="4">4</button>
+      </div>
+    </div>
+
+    <div class="setup-row">
+      <span class="setup-label">Bots</span>
+      <div class="seg" id="segBots" role="group" aria-label="Bots"></div>
+    </div>
+
+    <div class="seat-list" id="seatList"></div>
+
+    <div class="sheet-nav">
+      <button class="ghost" id="setupHowto">How to play</button>
+      <button class="next" id="setupStart">Start match</button>
+    </div>
+  </section>
+</main>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
