@@ -4,6 +4,8 @@
 
 <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=500&size=19&duration=3200&pause=900&color=36dec0&center=true&vCenter=true&width=680&lines=Board%2C%20pawns%20and%20die%20built%20from%20geometry%2C%20not%20models;Two%20players%20sit%20opposite%20each%20other%20across%20the%20table;Bots%20score%20every%20legal%20token%20and%20pick%20the%20best" alt="Typing animation" />
 
+<a href="https://jivaansh-yadav.github.io/prism-ludo/"><img src="https://img.shields.io/badge/Play%20Prism%20Ludo-jivaansh--yadav.github.io-36dec0?style=for-the-badge&labelColor=0b0f2b" alt="Play Prism Ludo" /></a>
+
 <br />
 
 <img src="https://img.shields.io/badge/Renderer-Three.js%20r170-36dec0?style=flat-square&labelColor=0b0f2b" alt="Three.js r170" />
@@ -19,7 +21,7 @@
 
 <div align="center">
 
-<sub>Three files that ship as they are: <b>2,151 lines</b> of HTML, CSS and one ES module. No models, no textures, no bundler — the board, the pawns and the die are geometry, and the page loads straight from a static folder.</sub>
+<sub>Three files that ship as they are: <b>2,153 lines</b> of HTML, CSS and one ES module. No models, no textures, no bundler — the board, the pawns and the die are geometry, and the whole thing runs from GitHub Pages exactly as it sits in the repository.</sub>
 
 </div>
 
@@ -173,6 +175,7 @@ dieGroup.rotation.set(...DICE_EULER[rollValue]);   // when it lands</code></pre>
 ├── index.html          # the page: stage, HUD, sheets, import map
 ├── app.js              # board · pawns · die · rules · bots · camera · audio (1,409 lines)
 ├── styles.css          # layout, sheets, tokens, safe-area insets (600 lines)
+├── favicon.svg         # the prism mark the tab shows
 └── audio/              # bgm · roll · step · capture · home · win</code></pre>
 
 ---
@@ -183,11 +186,15 @@ dieGroup.rotation.set(...DICE_EULER[rollValue]);   // when it lands</code></pre>
 
 </div>
 
+<p>The hosted build is at <a href="https://jivaansh-yadav.github.io/prism-ludo/"><b>jivaansh-yadav.github.io/prism-ludo</b></a> — GitHub Pages serves the repository root as it is, with no build step and no workflow to watch. Nothing to install to play.</p>
+
+<p>To run it locally:</p>
+
 <pre><code>git clone https://github.com/Jivaansh-Yadav/prism-ludo.git
 cd prism-ludo
 python3 -m http.server 8000</code></pre>
 
-<p>Then open <code>http://localhost:8000</code>. A server is required rather than a double-click, because the page loads Three.js through an import map and ES modules do not run from <code>file://</code>. Nothing else to install; there are no dependencies in the repository.</p>
+<p>Then open <code>http://localhost:8000</code>. A server is required rather than a double-click, because the page loads Three.js through an import map and ES modules do not run from <code>file://</code>. All asset paths are relative, which is why the same files work from a bare folder, from <code>/prism-ludo/</code> on Pages, and from any other subdirectory.</p>
 
 <p>Sound stays quiet until you touch the table, because browsers will not start audio without a gesture. If the room is silent after a roll, that is why.</p>
 

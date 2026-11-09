@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Prism Ludo">
+  <rect width="64" height="64" rx="14" fill="#101336"/>
+  <path d="M32 11 47 33 32 53 17 33Z" fill="#36dec0"/>
+  <path d="M32 11 47 33 32 33Z" fill="#8df2dd"/>
+  <path d="M32 33 47 33 32 53Z" fill="#1fb2a1"/>
+  <path d="M32 11 17 33 32 33Z" fill="#5fe8cd"/>
+</svg>
