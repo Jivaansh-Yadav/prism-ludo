@@ -21,7 +21,7 @@
 
 <div align="center">
 
-<sub>Three files that ship as they are: <b>2,153 lines</b> of HTML, CSS and one ES module. No models, no textures, no bundler — the board, the pawns and the die are geometry, and the whole thing runs from GitHub Pages exactly as it sits in the repository.</sub>
+<sub>Three files that ship as they are: <b>2,274 lines</b> of HTML, CSS and one ES module. No models, no textures, no bundler — the board, the pawns and the die are geometry, and the whole thing runs from GitHub Pages exactly as it sits in the repository.</sub>
 
 </div>
 
@@ -120,6 +120,21 @@ const d = pad * Math.max(radiusX / Math.sin(fovH / 2), radiusY / Math.sin(fovV /
 </details>
 
 <details>
+<summary><b>Two fingers move the camera, one finger turns it</b></summary>
+
+<br />
+
+<p>Zooming in is only useful if the part of the table you zoomed into can be reached, so the orbit controls pan as well as rotate: one finger turns the board, two fingers move the view and pinch to dolly. Panning is measured from whatever frame the current screen asked for — the tutorial frame, the sheet frame, the play frame — rather than from the world origin, which is why opening a panel never fights the camera position the player chose:</p>
+
+<pre><code>const halfV = d * Math.tan((camera.fov * Math.PI) / 360);
+const halfMin = Math.min(halfV, halfV * camera.aspect);
+const limit = THREE.MathUtils.clamp(BOARD_REACH - halfMin, 1.1, BOARD_REACH);</code></pre>
+
+<p>The allowance is the board's reach minus what the screen can already show, so at the default distance you can barely nudge the table, and by the time you are close enough to read a single token the whole board is reachable. The camera position is translated with the target so the clamp never changes the viewing angle, and the vertical allowance is smaller than the horizontal one so the table cannot be pushed under the floor.</p>
+
+</details>
+
+<details>
 <summary><b>A bot that scores, not a bot that guesses</b></summary>
 
 <br />
@@ -173,7 +188,7 @@ dieGroup.rotation.set(...DICE_EULER[rollValue]);   // when it lands</code></pre>
 
 <pre><code>prism-ludo/
 ├── index.html          # the page: stage, HUD, sheets, import map
-├── app.js              # board · pawns · die · rules · bots · camera · audio (1,409 lines)
+├── app.js              # board · pawns · die · rules · bots · camera · audio (1,530 lines)
 ├── styles.css          # layout, sheets, tokens, safe-area insets (600 lines)
 ├── favicon.svg         # the prism mark the tab shows
 └── audio/              # bgm · roll · step · capture · home · win</code></pre>

@@ -10,7 +10,7 @@ const $ = (id) => document.getElementById(id);
 const app = $('app');
 const NAMES = ['red', 'green', 'gold', 'blue'];
 const LABELS = ['Red', 'Green', 'Gold', 'Blue'];
-const COLORS = [0xff6088, 0x36dec0, 0xffcb62, 0x7787ff];
+const COLORS = [0xff2d6b, 0x14e8b0, 0xffc21a, 0x4a63ff];
 const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const STRINGS = {
@@ -322,19 +322,22 @@ function setup() {
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.9;
+  renderer.toneMappingExposure = 1.02;
   stage.appendChild(renderer.domElement);
 
   camera = new THREE.PerspectiveCamera(37, 1, 0.1, 130);
   controls = new OrbitControls(camera, renderer.domElement);
   controls.enableDamping = true;
   controls.dampingFactor = 0.07;
-  controls.enablePan = false;
+  controls.enablePan = true;
+  controls.screenSpacePanning = true;
+  controls.panSpeed = 0.85;
   controls.minPolarAngle = 0.05;
   controls.maxPolarAngle = 1.4;
-  controls.minDistance = 20;
+  controls.minDistance = 13;
   controls.maxDistance = 65;
   controls.rotateSpeed = 0.85;
+  controls.touches = { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
   controls.target.set(0, 0, 0);
 
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -380,8 +383,15 @@ function setup() {
   ready = true;
   $('roll').disabled = false;
 
+  $('hint').textContent = matchMedia('(pointer: coarse)').matches
+    ? 'Drag to rotate · pinch to zoom · two fingers to move'
+    : 'Drag to rotate · scroll to zoom · right-drag to move';
+
   renderer.domElement.addEventListener('pointerdown', onPointerDown);
   renderer.domElement.addEventListener('pointerup', onPointerUp);
+  renderer.domElement.addEventListener('pointercancel', onPointerRelease);
+  window.addEventListener('pointerup', onPointerRelease);
+  window.addEventListener('pointercancel', onPointerRelease);
   window.addEventListener('resize', onResize);
   document.addEventListener('visibilitychange', onVisibility);
 
@@ -393,11 +403,11 @@ function setup() {
    Board
    -------------------------------------------------------------------------- */
 function buildTable() {
-  const base = mat(0x252c63, 0.32, 0.15);
-  const edge = mat(0x47609f, 0.24, 0.3);
-  const ice = mat(0x232c5e, 0.4, 0.06);
+  const base = mat(0x33307e, 0.28, 0.2);
+  const edge = mat(0x6a5ae0, 0.2, 0.36);
+  const ice = mat(0x2b2870, 0.32, 0.08);
 
-  box(18.7, 0.7, 18.7, 0.45, mat(0x161a41, 0.34, 0.18), 0, -1, 0);
+  box(18.7, 0.7, 18.7, 0.45, mat(0x181e52, 0.32, 0.2), 0, -1, 0);
   box(18.15, 0.14, 18.15, 0.34, edge, 0, -0.59, 0);
   box(17.95, 0.48, 17.95, 0.4, base, 0, -0.3, 0);
   box(16.55, 0.22, 16.55, 0.32, mat(0x0a0f2c, 0.34, 0.2), 0, 0.07, 0);
@@ -413,10 +423,16 @@ function buildTable() {
   for (let p = 0; p < 4; p++) {
     const x = p === 0 || p === 3 ? -4.5 : 4.5;
     const z = p < 2 ? -4.5 : 4.5;
-    const keep = (o) => { yardParts[p].push({ mesh: o, base: o.material.color.clone() }); return o; };
-    keep(box(5.85, 0.12, 5.85, 0.36, mat(COLORS[p], 0.22, 0.15), x, 0.4, z));
+    const keep = (o) => {
+      yardParts[p].push({ mesh: o, base: o.material.color.clone(), glow: o.material.emissiveIntensity || 0 });
+      return o;
+    };
+    const slab = mat(COLORS[p], 0.19, 0.16);
+    slab.emissive = new THREE.Color(COLORS[p]);
+    slab.emissiveIntensity = 0.34;
+    keep(box(5.85, 0.12, 5.85, 0.36, slab, x, 0.4, z));
     keep(box(4.62, 0.09, 4.62, 0.45,
-      mat(new THREE.Color(COLORS[p]).lerp(new THREE.Color(0x1b2350), 0.55), 0.28, 0.05), x, 0.49, z));
+      mat(new THREE.Color(COLORS[p]).lerp(new THREE.Color(0x1b2350), 0.45), 0.26, 0.06), x, 0.49, z));
     for (let ti = 0; ti < 4; ti++) {
       const [r, c] = YARDS[p][ti];
       const dock = keep(mesh(new THREE.CylinderGeometry(0.66, 0.72, 0.07, 40), mat(COLORS[p], 0.23, 0.1)));
@@ -433,15 +449,15 @@ function buildTable() {
   const tileGeo = new RoundedBoxGeometry(0.955, 0.12, 0.955, 2, 0.045);
   for (let i = 0; i < 52; i++) {
     const startOf = START.indexOf(i);
-    const colour = startOf >= 0 ? COLORS[startOf] : 0xd2ddf4;
-    const tileMat = mat(colour, 0.3, 0.05);
+    const colour = startOf >= 0 ? COLORS[startOf] : 0xfaf3e2;
+    const tileMat = mat(colour, 0.26, 0.06);
     if (startOf >= 0) {
       tileMat.emissive = new THREE.Color(colour);
-      tileMat.emissiveIntensity = 0.22;
+      tileMat.emissiveIntensity = 0.46;
     }
     const tile = mesh(tileGeo, tileMat);
     tile.userData.baseColor = startOf >= 0 ? colour : 0;
-    tile.userData.baseIntensity = startOf >= 0 ? 0.22 : 0;
+    tile.userData.baseIntensity = startOf >= 0 ? 0.46 : 0;
     tile.position.set(PATH[i][1] - 7, 0.42, PATH[i][0] - 7);
     ringTiles[i] = tile;
     if (SAFE.has(i)) {
@@ -455,12 +471,12 @@ function buildTable() {
     laneTiles[p] = [];
     for (let i = 0; i < 5; i++) {
       const [r, c] = HOMES[p][i];
-      const laneMat = mat(new THREE.Color(COLORS[p]).lerp(new THREE.Color(0x1a2350), 0.15), 0.28, 0.08);
+      const laneMat = mat(new THREE.Color(COLORS[p]).lerp(new THREE.Color(0x1a2350), 0.08), 0.24, 0.08);
       laneMat.emissive = new THREE.Color(COLORS[p]);
-      laneMat.emissiveIntensity = 0.16;
+      laneMat.emissiveIntensity = 0.4;
       const tile = mesh(tileGeo, laneMat);
       tile.userData.baseColor = COLORS[p];
-      tile.userData.baseIntensity = 0.16;
+      tile.userData.baseIntensity = 0.4;
       tile.position.set(c - 7, 0.43, r - 7);
       laneTiles[p][i] = tile;
     }
@@ -470,9 +486,12 @@ function buildTable() {
     shape.lineTo(...corners[p]);
     shape.lineTo(...corners[(p + 1) % 4]);
     shape.closePath();
+    const fanMat = mat(COLORS[[1, 2, 3, 0][p]], 0.18, 0.12);
+    fanMat.emissive = new THREE.Color(COLORS[[1, 2, 3, 0][p]]);
+    fanMat.emissiveIntensity = 0.3;
     const tri = mesh(new THREE.ExtrudeGeometry(shape, {
       depth: 0.12, bevelEnabled: true, bevelSize: 0.035, bevelThickness: 0.025, bevelSegments: 2, steps: 1
-    }), mat(COLORS[[1, 2, 3, 0][p]]));
+    }), fanMat);
     tri.rotation.x = Math.PI / 2;
     tri.position.y = 0.54;
   }
@@ -828,6 +847,7 @@ function tintYards(list = seats) {
     const on = list.includes(p);
     for (const part of yardParts[p]) {
       part.mesh.material.color.copy(part.base).lerp(dead, on ? 0 : 0.86);
+      if (part.glow) part.mesh.material.emissiveIntensity = on ? part.glow : 0;
     }
   }
 }
@@ -1205,10 +1225,42 @@ const camMove = {
 };
 let camPlaced = false;
 
+/* Panning is anchored to whatever frame the current screen asked for, and the
+   distance you may drag away from it grows the further you zoom in, so the whole
+   board stays reachable without ever letting it drift off screen. */
+const BOARD_REACH = 10.4;
+const panAnchor = new THREE.Vector3();
+const panDelta = new THREE.Vector3();
+const panOff = new THREE.Vector3();
+
 const easeInOut = (u) => (u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2);
 
 function stopCamMove() {
   camMove.on = false;
+}
+
+/* How far the view may slide from its anchor at the current zoom. */
+function panLimit() {
+  const d = camera.position.distanceTo(controls.target);
+  const halfV = d * Math.tan((camera.fov * Math.PI) / 360);
+  const halfMin = Math.min(halfV, halfV * camera.aspect);
+  return THREE.MathUtils.clamp(BOARD_REACH - halfMin, 1.1, BOARD_REACH);
+}
+
+function clampPan() {
+  if (camMove.on) return;
+  const limit = panLimit();
+  panOff.copy(controls.target).sub(panAnchor);
+  panOff.y = 0;
+  if (panOff.length() > limit) panOff.setLength(limit);
+  panDelta.set(
+    panAnchor.x + panOff.x - controls.target.x,
+    THREE.MathUtils.clamp(controls.target.y - panAnchor.y, -1.6, 2.4) + panAnchor.y - controls.target.y,
+    panAnchor.z + panOff.z - controls.target.z
+  );
+  if (panDelta.lengthSq() < 1e-8) return;
+  controls.target.add(panDelta);
+  camera.position.add(panDelta);
 }
 
 function moveCameraTo(pos, target) {
@@ -1239,11 +1291,13 @@ function frameBoard(pad, rise, dxFrac = 0, instant = false) {
   if (instant || reduced || !camPlaced) {
     camMove.on = false;
     controls.target.copy(toTarget);
+    panAnchor.copy(toTarget);
     camera.position.copy(toPos);
     controls.update();
     camPlaced = true;
     return;
   }
+  panAnchor.copy(toTarget);
   moveCameraTo(toPos, toTarget);
 }
 
@@ -1269,14 +1323,23 @@ function topCamera() {
 }
 
 let pointerStart = null;
+const activePointers = new Set();
 const raycaster = new THREE.Raycaster();
 
 function onPointerDown(e) {
   stopCamMove();
+  activePointers.add(e.pointerId);
+  if (activePointers.size > 1) { pointerStart = null; return; }
   pointerStart = [e.clientX, e.clientY];
 }
 
+function onPointerRelease(e) {
+  activePointers.delete(e.pointerId);
+  if (activePointers.size > 0) pointerStart = null;
+}
+
 function onPointerUp(e) {
+  onPointerRelease(e);
   if (!pointerStart) return;
   const moved = Math.hypot(e.clientX - pointerStart[0], e.clientY - pointerStart[1]);
   pointerStart = null;
@@ -1333,6 +1396,7 @@ function tick(now) {
   }
 
   controls.update();
+  clampPan();
 
   if (phase === 'rolling') {
     const s = (now - rollingStart) / 1000;
