@@ -8,8 +8,8 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const $ = (id) => document.getElementById(id);
 const app = $('app');
-const NAMES = ['red', 'green', 'gold', 'blue'];
-const LABELS = ['Red', 'Green', 'Gold', 'Blue'];
+const NAMES = ['red', 'green', 'yellow', 'blue'];
+const LABELS = ['Red', 'Green', 'Yellow', 'Blue'];
 const hex = (n) => `#${n.toString(16).padStart(6, '0')}`;
 
 /* Five boards. A theme repaints the room, re-materials the table, changes the tile
@@ -834,7 +834,7 @@ function applyThemeVars(theme) {
   const root = document.documentElement.style;
   root.setProperty('--color-red', hex(theme.seats[0]));
   root.setProperty('--color-green', hex(theme.seats[1]));
-  root.setProperty('--color-gold', hex(theme.seats[2]));
+  root.setProperty('--color-yellow', hex(theme.seats[2]));
   root.setProperty('--color-violet', hex(theme.seats[3]));
   root.setProperty('--color-night', theme.room.page);
   const meta = document.querySelector('meta[name="theme-color"]');
