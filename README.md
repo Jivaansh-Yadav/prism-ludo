@@ -22,7 +22,7 @@
 
 <div align="center">
 
-<sub>Three files that ship as they are: <b>2,556 lines</b> of HTML, CSS and one ES module. No models, no textures, no bundler — the board, the pawns and the die are geometry, and the whole thing runs from GitHub Pages exactly as it sits in the repository.</sub>
+<sub>Three files that ship as they are: <b>2,558 lines</b> of HTML, CSS and one ES module. No models, no textures, no bundler — the board, the pawns and the die are geometry, and the whole thing runs from GitHub Pages exactly as it sits in the repository.</sub>
 
 </div>
 
@@ -222,7 +222,7 @@ dieGroup.rotation.set(...DICE_EULER[rollValue]);   // when it lands</code></pre>
 
 <pre><code>prism-ludo/
 ├── index.html          # the page: stage, HUD, sheets, import map
-├── app.js              # themes · board · pawns · die · rules · bots · camera · audio (1,764 lines)
+├── app.js              # themes · board · pawns · die · rules · bots · camera · audio (1,766 lines)
 ├── styles.css          # layout, sheets, tokens, theme picker, safe-area insets (643 lines)
 ├── favicon.svg         # the prism mark the tab shows
 └── audio/
